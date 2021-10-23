@@ -9,8 +9,9 @@ defmodule RikimaruChatApiWeb.Endpoint do
     key: "_rikimaru_chat_api_key",
     signing_salt: "emJJq79J"
   ]
-
-  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
+  socket "/socket", RikimaruChatApiWeb.UserSocket,
+      websocket: true,
+      longpoll: false
 
   # Serve at "/" the static files from "priv/static" directory.
   #
