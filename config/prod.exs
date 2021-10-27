@@ -1,5 +1,5 @@
 import Config
-
+@secret_key_base "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.VFb0qJ1LRg_4ujbZoRMXnVkUgiuKq5KxWqNdbKq_G9Vvz-S1zZa9LPxtHWKa64zDl2ofkT8F6jBt_K4riU-fPg"
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
 # when generating URLs.
@@ -11,6 +11,7 @@ import Config
 # before starting your production server.
 config :rikimaru_chat_api, RikimaruChatApiWeb.Endpoint,
   url: [host: "example.com", port: 80],
+  secret_key_base: @secret_key_base,
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production

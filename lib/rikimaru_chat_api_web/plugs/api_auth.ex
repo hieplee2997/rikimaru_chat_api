@@ -1,6 +1,6 @@
 defmodule Rikimaru.API.Plugs.Auth do
   import Plug.Conn
-  alias Rikimaru.{Tools}
+  alias RikimaruChatApi.Rikimaru.{Tools}
 
   @secret_key_base "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.VFb0qJ1LRg_4ujbZoRMXnVkUgiuKq5KxWqNdbKq_G9Vvz-S1zZa9LPxtHWKa64zDl2ofkT8F6jBt_K4riU-fPg"
 
@@ -27,7 +27,6 @@ defmodule Rikimaru.API.Plugs.Auth do
     try do
       case JsonWebToken.verify(token, %{key: @secret_key_base}) do
         {:ok, claims} ->
-          # current_timestamp = Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
           user = Map.take(claims, [:uid, :full_name])
           if user do
             assign(conn, :current_user, user)

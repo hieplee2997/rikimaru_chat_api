@@ -14,10 +14,15 @@ defmodule RikimaruChatApiWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", RikimaruChatApiWeb do
-    pipe_through :browser
+  scope "/api", RikimaruChatApiWeb do
+    pipe_through :api
 
     get "/", PageController, :index
+    scope "/users" do
+      post "/register",                  UserController,             :create_account
+      post "/login",                     UserController,             :password_login
+      get "/fetch_me",                  UserController,              :fetch_me
+    end
   end
 
   # Other scopes may use custom stacks.

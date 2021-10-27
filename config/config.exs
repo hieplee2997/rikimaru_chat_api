@@ -13,6 +13,7 @@ config :rikimaru_chat_api,
 # Configures the endpoint
 config :rikimaru_chat_api, RikimaruChatApiWeb.Endpoint,
   url: [host: "localhost"],
+  secret_key_base: "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.VFb0qJ1LRg_4ujbZoRMXnVkUgiuKq5KxWqNdbKq_G9Vvz-S1zZa9LPxtHWKa64zDl2ofkT8F6jBt_K4riU-fPg",
   render_errors: [view: RikimaruChatApiWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: RikimaruChatApi.PubSub,
   live_view: [signing_salt: "4gnDPn+b"]

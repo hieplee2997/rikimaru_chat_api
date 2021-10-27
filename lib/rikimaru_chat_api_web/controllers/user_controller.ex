@@ -1,0 +1,104 @@
+defmodule RikimaruChatApiWeb.UserController do
+    use RikimaruChatApiWeb, :controller
+    alias RikimaruChatApi.Rikimaru.{User, Tools}
+    alias RikimaruChatApi.{Repo}
+
+    plug Rikimaru.API.Plugs.Auth when action in [:fetch_me]
+
+    @field [:id, :full_name, :user_name, :access_token, :avatar_url]
+    @secret_key_base "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.VFb0qJ1LRg_4ujbZoRMXnVkUgiuKq5KxWqNdbKq_G9Vvz-S1zZa9LPxtHWKa64zDl2ofkT8F6jBt_K4riU-fPg"
+
+    def password_login(conn, params) do
+        user_name = params["userName"]
+        password = params["password"]
+        IO.inspect conn.secret_key_base, label: "Conn"
+
+        user = Repo.get_by(User, %{user_name: user_name |> String.downcase |> String.trim})
+
+        case user do
+          nil ->
+            json conn, %{success: false, message: "WRONG USERNAME"}
+          _ -> 
+            case Comeonin.Bcrypt.checkpw(password, user.password_hash) do
+                true ->
+                 iat = Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
+                 exp = iat + 7760000
+                 
+                 jwt = JsonWebToken.sign(
+                     %{
+                         uid: user.id,
+                         full_name: user.full_name,
+                         iat: iat,
+                         exp: exp
+                     }, %{key: conn.secret_key_base}
+                 )
+     
+                 response = %{
+                     success: true,
+                     access_token: jwt,
+                     expire_in: exp,
+                     data: Map.take(user, @field),
+                     message: "Bạn đã đăng nhập thành công"
+                 }
+     
+                 json conn, response
+                false ->
+                 json conn, %{success: false, message: "WRONG PASSWORD"}
+             end
+        end
+
+        
+    end
+    def create_account(conn, params) do
+        display_name = params["displayName"]
+        user_name = params["userName"]
+        password = params["password"]
+        # avatar_url = params["avatar_url"]
+
+        cond do
+            Tools.is_empty(display_name) or Tools.is_empty(user_name) or Tools.is_empty(password) ->
+                json conn, %{success: false, message: "INVALID_FIELD"}
+            true ->
+                user = %User{
+                    user_name: user_name,
+                    full_name: display_name,
+                    password_hash: Comeonin.Bcrypt.hashpwsalt(password)
+                }
+                Repo.transaction(fn  ->
+                    user = Repo.insert(user)
+                    |> case  do
+                        {:error, changeset} -> Repo.rollback(changeset)
+                        {:ok, create_user} -> create_user
+                    end
+                    user
+                end)
+                |> case  do
+                {:ok, create_user} ->
+                    iat = Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
+                    exp = iat + 7760000
+                    jwt = JsonWebToken.sign(
+                        %{
+                            uid: create_user.id,
+                            iat: iat,
+                            exp: exp
+                        }, %{key: @secret_key_base}
+                    )
+                    json conn, %{
+                        success: true,
+                        access_token: jwt,
+                        expire_in: exp,
+                        data: Map.take(create_user, @field),
+                        message: "Tài khoản đã được tạo thành công"
+                    }
+                {:error, _} -> 
+                    json conn, %{success: false, message: "Đã có lỗi xảy ra vui lòng thử lại sau"} 
+                end
+        end
+    end
+    def fetch_me(conn, params) do
+        user_id = conn.assigns.current_user.uid
+        user = Repo.get_by(User, %{id: user_id})
+
+        json conn, %{success: true, }
+    end
+end

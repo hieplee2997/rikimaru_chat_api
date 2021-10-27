@@ -50,6 +50,8 @@ defmodule RikimaruChatApi.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:json_web_token, "~> 0.2.5"},
+      {:comeonin, "~> 2.4"},
+      {:calendar, "~> 0.17.5"},
     ]
   end
 
