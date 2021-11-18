@@ -2,7 +2,7 @@ defmodule RikimaruChatApiWeb.UserChannel do
   use RikimaruChatApiWeb, :channel
 
   @impl true
-  def join("user:lobby", payload, socket) do
+  def join("user:" <> user_id, payload, socket) do
     if authorized?(payload) do
       {:ok, socket}
     else
