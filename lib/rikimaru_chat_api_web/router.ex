@@ -28,6 +28,7 @@ defmodule RikimaruChatApiWeb.Router do
         post "/create_conversation",     ConversationController,     :create_conversation
         post "/create_message",          ConversationController,     :create_message
         get "/load_messages",             ConversationController,     :get_message_conversation
+        get "/load_more_messages",        ConversationController,     :load_more_message
       end
     end
   end

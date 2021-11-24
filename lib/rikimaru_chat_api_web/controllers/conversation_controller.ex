@@ -69,12 +69,13 @@ defmodule RikimaruChatApiWeb.ConversationController do
         conversation_id = params["conversation_id"]
 
         messages = from(cms in ConversationMessage,
-            where: cms.conversation_id == ^conversation_id
+            where: cms.conversation_id == ^conversation_id,
+            order_by: [desc: cms.current_time],
+            limit: 20
         ) |> Repo.all
         |> Enum.map(fn m ->
            m |> Map.take([:message, :user_id, :current_time, :main_id])
         end)
-        |> Enum.sort(fn (a,b) -> a["current_time"] > b["current_time"] end)
         |> Enum.map(fn m ->
            %{
                "message" => m.message,
@@ -85,6 +86,38 @@ defmodule RikimaruChatApiWeb.ConversationController do
         end)
         json conn, %{success: true, data: %{"conversation_id" => conversation_id, "messages" => messages}}
     end
+
+    def load_more_message(conn, params) do
+        conversation_id = params["conversation_id"]
+        last_id = params["last_id"]
+
+        last_message = Repo.get_by(ConversationMessage, %{main_id: last_id, conversation_id: conversation_id})
+        IO.inspect last_message.message
+        if last_message do
+            current_time_last_message = last_message.current_time
+            messages = from(cms in ConversationMessage,
+                where: cms.conversation_id == ^conversation_id and cms.current_time < ^current_time_last_message,
+                order_by: [desc: cms.current_time],
+                limit: 20
+            ) |> Repo.all
+            |> Enum.map(fn m ->
+                m |> Map.take([:message, :user_id, :current_time, :main_id])
+            end)
+            |> Enum.map(fn m ->
+                %{
+                    "message" => m.message,
+                    "user_id" => m.user_id,
+                    "current_time" => m.current_time,
+                    "id" => m.main_id
+                 }
+             end)
+             json conn, %{success: true, data: messages}
+        else
+            IO.inspect "Last mesage id không hợp lệ"
+            json conn, %{success: false, message: "Last mesage id không hợp lệ"}
+        end
+    end
+
     def create_conversation(conn, params) do
         user_id = conn.assigns.current_user.uid
         friend_id = params["friend_id"]
