@@ -5,7 +5,7 @@ defmodule RikimaruChatApi.MixProject do
     [
       app: :rikimaru_chat_api,
       version: "0.1.0",
-      elixir: "~> 1.12",
+      elixir: "~> 1.11.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -49,7 +49,7 @@ defmodule RikimaruChatApi.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:json_web_token, "~> 0.2.5"},
+      {:json_web_token, "~> 0.2.10"},
       {:comeonin, "~> 2.4"},
       {:calendar, "~> 0.17.5"},
     ]

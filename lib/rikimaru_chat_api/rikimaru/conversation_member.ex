@@ -2,10 +2,10 @@ defmodule RikimaruChatApi.Rikimaru.ConversationMember do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key {:id, :string, autogenerate: false}
 
   schema "conversation_members" do
-    field :conversation_id, Ecto.UUID
+    field :conversation_id, :string
     field :new_message_count, :integer
     field :seen, :boolean, default: false
     field :user_id, Ecto.UUID

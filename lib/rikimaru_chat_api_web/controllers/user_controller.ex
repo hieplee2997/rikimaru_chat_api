@@ -18,12 +18,12 @@ defmodule RikimaruChatApiWeb.UserController do
         case user do
           nil ->
             json conn, %{success: false, message: "WRONG USERNAME"}
-          _ -> 
+          _ ->
             case Comeonin.Bcrypt.checkpw(password, user.password_hash) do
                 true ->
                  iat = Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
                  exp = iat + 7760000
-                 
+
                  jwt = JsonWebToken.sign(
                      %{
                          uid: user.id,
@@ -32,7 +32,7 @@ defmodule RikimaruChatApiWeb.UserController do
                          exp: exp
                      }, %{key: conn.secret_key_base}
                  )
-     
+
                  response = %{
                     success: true,
                     access_token: jwt,
@@ -40,14 +40,14 @@ defmodule RikimaruChatApiWeb.UserController do
                     data: Map.take(user, @field),
                     message: "Bạn đã đăng nhập thành công"
                  }
-     
+
                  json conn, response
                 false ->
                  json conn, %{success: false, message: "WRONG PASSWORD"}
              end
         end
 
-        
+
     end
     def create_account(conn, params) do
         display_name = params["displayName"]
@@ -93,38 +93,36 @@ defmodule RikimaruChatApiWeb.UserController do
                         data: Map.take(create_user, @field),
                         message: "Tài khoản đã được tạo thành công"
                     }
-                {:error, _} -> 
-                    json conn, %{success: false, message: "Đã có lỗi xảy ra vui lòng thử lại sau"} 
+                {:error, _} ->
+                    json conn, %{success: false, message: "Đã có lỗi xảy ra vui lòng thử lại sau"}
                 end
         end
     end
     def fetch_me(conn, _) do
         user_id = conn.assigns.current_user.uid
         case Repo.get_by(User, %{id: user_id}) do
-            nil -> 
+            nil ->
                 json conn, %{success: false, message: "User không còn tồn tại trên hệ thống"}
-            user -> 
-                user = Map.take(user, [:id, :full_name, :user_name])
+            user ->
+                user = Map.take(user, [:full_name, :user_name]) |> Map.put(:user_id, user.id)
                 friends = from(
                     u in UserRelation,
                     join: ur in UserRelation,
-                    on: ur.user_id == u.friend_id and ur.friend_id == u.user_id,
+                    on: u.user_id == ur.friend_id and u.friend_id == ur.user_id,
                     where: u.user_id == ^user_id,
-                    limit: 15,
-                    offset: 0,
                     select: u.friend_id
                   )
                   |> Repo.all
-                  |> Enum.map(fn id -> 
-                        Repo.get_by(User, %{id: id}) |> Map.take([:full_name, :user_name, :id])
+                  |> Enum.map(fn id ->
+                        Repo.get_by(User, %{id: id}) |> Map.take([:full_name, :user_name]) |> Map.put(:user_id, id)
                     end)
                 json conn, %{success: true, user: user, friends: friends}
-        end 
+        end
     end
     def add_friend(conn, params) do
         user_id = conn.assigns.current_user.uid
         user_name_add = if params["user_name"] != nil, do: params["user_name"], else: ""
-        
+
         if user_name_add != "" do
             user = Repo.get_by(User, %{user_name: user_name_add})
             if user do
@@ -150,7 +148,7 @@ defmodule RikimaruChatApiWeb.UserController do
                     friend_id: user_id
                   }
                   |> Repo.insert
-                  user = user |> Map.take([:id, :full_name, :user_name])
+                  user = user |> Map.take([:full_name, :user_name]) |> Map.put(:user_id, user.id)
                   json conn, %{success: true, friend: user}
               end
             else

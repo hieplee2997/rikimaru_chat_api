@@ -24,8 +24,10 @@ defmodule RikimaruChatApiWeb.Router do
       get "/fetch_me",                   UserController,             :fetch_me
       post "/add_friend",                UserController,             :add_friend
       scope "/conversation" do
-        get "/",                         ConversationController,     :get_conversation
+        get "/",                         ConversationController,     :index
         post "/create_conversation",     ConversationController,     :create_conversation
+        post "/create_message",          ConversationController,     :create_message
+        get "/load_messages",             ConversationController,     :get_message_conversation
       end
     end
   end
