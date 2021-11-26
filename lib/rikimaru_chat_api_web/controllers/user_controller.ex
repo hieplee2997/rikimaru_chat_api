@@ -3,8 +3,9 @@ defmodule RikimaruChatApiWeb.UserController do
     use RikimaruChatApiWeb, :controller
     alias RikimaruChatApi.Rikimaru.{User, Tools, UserRelation}
     alias RikimaruChatApi.{Repo}
+    alias RikimaruChatApiWeb.{Endpoint}
 
-    plug Rikimaru.API.Plugs.Auth when action in [:fetch_me, :add_friend]
+    plug Rikimaru.API.Plugs.Auth when action in [:fetch_me, :add_friend, :change_user_info]
 
     @field [:id, :full_name, :user_name, :access_token, :avatar_url]
     @secret_key_base "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.VFb0qJ1LRg_4ujbZoRMXnVkUgiuKq5KxWqNdbKq_G9Vvz-S1zZa9LPxtHWKa64zDl2ofkT8F6jBt_K4riU-fPg"
@@ -104,7 +105,7 @@ defmodule RikimaruChatApiWeb.UserController do
             nil ->
                 json conn, %{success: false, message: "User không còn tồn tại trên hệ thống"}
             user ->
-                user = Map.take(user, [:full_name, :user_name]) |> Map.put(:user_id, user.id)
+                user = Map.take(user, [:full_name, :user_name, :avatar_url]) |> Map.put(:user_id, user.id)
                 friends = from(
                     u in UserRelation,
                     join: ur in UserRelation,
@@ -114,7 +115,7 @@ defmodule RikimaruChatApiWeb.UserController do
                   )
                   |> Repo.all
                   |> Enum.map(fn id ->
-                        Repo.get_by(User, %{id: id}) |> Map.take([:full_name, :user_name]) |> Map.put(:user_id, id)
+                        Repo.get_by(User, %{id: id}) |> Map.take([:full_name, :user_name, :avatar_url]) |> Map.put(:user_id, id)
                     end)
                 json conn, %{success: true, user: user, friends: friends}
         end
@@ -157,5 +158,37 @@ defmodule RikimaruChatApiWeb.UserController do
         else
             json conn, %{success: false, message: "Tên người dùng không được rỗng"}
         end
+    end
+
+    def change_user_info(conn, params) do
+        user_id = conn.assigns.current_user.uid
+        full_name = params["full_name"]
+        user_name = params["user_name"]
+        avatar_url = params["avatar_url"]
+
+        from(u in User, where: u.id == ^user_id)
+        |> Repo.update_all(set: [full_name: full_name, user_name: user_name, avatar_url: avatar_url])
+
+        list_friend = from(
+            u in UserRelation,
+            join: ur in UserRelation,
+            on: u.user_id == ur.friend_id and u.friend_id == ur.user_id,
+            where: u.user_id == ^user_id,
+            select: u.friend_id
+          )
+          |> Repo.all
+        list_friend |> Enum.map(fn id ->
+            Endpoint.broadcast!(
+                "user:#{id}",
+                "update_info_friend",
+                %{
+                    "user_id" => user_id,
+                    "full_name" => full_name,
+                    "user_name" => user_name,
+                    "avatar_url" => avatar_url
+                }
+            )
+        end)
+        json conn, %{success: true}
     end
 end
